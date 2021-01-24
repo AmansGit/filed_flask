@@ -10,6 +10,7 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = '1$\x9c\xce\xael\x1f,\x92\xabz\xc8\x82x\xbc\xfd'
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///site.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 class CreditCardDetails(db.Model):
@@ -18,7 +19,7 @@ class CreditCardDetails(db.Model):
 	order_id = 		db.Column(db.String(50))
 	full_name = 	db.Column(db.String(50), unique=False, nullable=False)
 	number = 		db.Column(db.Integer ,unique=True, nullable=False)
-	expire_date = 	db.Column(db.DateTime, nullable= False)
+	expire_date = 	db.Column(db.String(10), nullable= False)
 	sec_code = 		db.Column(db.Integer, nullable=False)
 	amount = 		db.Column(db.Integer, nullable= False)
 
@@ -103,10 +104,14 @@ def ProcessPayment():
 				result, status = PremiumPaymentGateway(request_json)
 				payment_type = 'PremiumPaymentGateway'
 			err_msg = "Successful"
-			payment = CreditCardDetails(order_id= result["id"], full_name=name, 
-						number=number, expire_date=expire_date,	sec_code=cvv, amount=amount)
-			db.session.add(payment)
-			db.session.commit()			
+			try:
+
+				payment = CreditCardDetails(order_id= result["id"], full_name=name, 
+							number=number, expire_date=expire_date,	sec_code=cvv, amount=amount)
+				db.session.add(payment)
+				db.session.commit()
+			except Exception as e:
+				pass			
 	else:
 		response_code = 400
 
@@ -172,11 +177,14 @@ def validate(request_json):
 
 # Validation for expire Date::		
 	else:
+		status = True
 		current_date = datetime.now()
+		print("current_date::", current_date.year)
 		current_month, current_year = current_date.month, current_date.year
 		month, year = request_json['expire_date'].split("/")
+
 		# print(f"AMAN:: {request_json['expire_date']}")
-		if(len(str(year)) ==4 ):
+		if(len(str(year)) == 4):
 			if(int(year)==current_year):
 				if(int(month) >12 or int(month)<current_month):
 					status = False
@@ -185,7 +193,7 @@ def validate(request_json):
 		else:
 			status = False
 		if(not status):
-			err_msg += " Expire Date"
+			err_msg += " Date Expired"
 	if 'sec_code' not in request_json:
 		err_msg += " sec_code not in body"
 		status = False
