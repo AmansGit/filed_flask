@@ -1,8 +1,6 @@
 import razorpay 
 import json
-YOUR_ID = "rzp_test_srE4r5f1lsA7j4"
-YOUR_SECRET = "GZsFgEYrq6gVYjM7zuTtPia3"
-
+from .secret import YOUR_ID, YOUR_SECRET
 client = razorpay.Client(auth=(YOUR_ID, YOUR_SECRET))
 
 client.set_app_details({"title" : "flask", "version" : "1.1.2"})
